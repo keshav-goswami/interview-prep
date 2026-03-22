@@ -26,6 +26,17 @@ export class ProfileService {
 
   profile = signal<UserProfile>(this.load());
 
+  // Mobile menu state (not persisted — always closed on load)
+  mobileMenuOpen = signal(false);
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.set(!this.mobileMenuOpen());
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
   getAllSections() {
     return this.allSections;
   }

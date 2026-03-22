@@ -24,13 +24,13 @@ import { Section } from '../../../models/progress.model';
         @if (!profileService.isCollapsed()) {
           <span class="nav-label">Overview</span>
         }
-        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" title="Dashboard">
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" title="Dashboard" (click)="onNavClick()">
           <span class="nav-icon">&#9632;</span>
           @if (!profileService.isCollapsed()) {
             <span class="nav-text">Dashboard</span>
           }
         </a>
-        <a routerLink="/schedule" routerLinkActive="active" class="nav-item" title="Schedule">
+        <a routerLink="/schedule" routerLinkActive="active" class="nav-item" title="Schedule" (click)="onNavClick()">
           <span class="nav-icon">&#128197;</span>
           @if (!profileService.isCollapsed()) {
             <span class="nav-text">Schedule</span>
@@ -44,7 +44,7 @@ import { Section } from '../../../models/progress.model';
         }
         @for (item of navItems; track item.route) {
           @if (profileService.isSectionEnabled(item.section)) {
-            <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.label">
+            <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.label" (click)="onNavClick()">
               <span class="nav-icon">{{ item.icon }}</span>
               @if (!profileService.isCollapsed()) {
                 <span class="nav-text">{{ item.label }}</span>
@@ -56,7 +56,7 @@ import { Section } from '../../../models/progress.model';
       </div>
 
       <div class="nav-section nav-bottom">
-        <a routerLink="/settings" routerLinkActive="active" class="nav-item" title="Settings">
+        <a routerLink="/settings" routerLinkActive="active" class="nav-item" title="Settings" (click)="onNavClick()">
           <span class="nav-icon settings-icon">&#9881;</span>
           @if (!profileService.isCollapsed()) {
             <span class="nav-text">Settings</span>
@@ -178,6 +178,22 @@ import { Section } from '../../../models/progress.model';
       padding-top: 8px;
       padding-bottom: 12px;
     }
+
+    /* Mobile: sidebar hidden off-screen, slides in as overlay */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        width: var(--sidebar-width) !important;
+        box-shadow: none;
+      }
+      :host(.mobile-open) .sidebar {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+      }
+      .collapsed .sidebar-brand { justify-content: flex-start; padding: 16px 16px 14px; }
+      .sidebar.collapsed { width: var(--sidebar-width) !important; }
+      .collapse-btn { display: none; }
+    }
   `]
 })
 export class SidebarComponent {
@@ -198,5 +214,9 @@ export class SidebarComponent {
 
   getProgress(section: Section): number {
     return this.progressService.getSectionProgress(section).percentage;
+  }
+
+  onNavClick(): void {
+    this.profileService.closeMobileMenu();
   }
 }

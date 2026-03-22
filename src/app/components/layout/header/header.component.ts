@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
 import { ProgressService } from '../../../services/progress.service';
+import { ProfileService } from '../../../services/profile.service';
 
 @Component({
   selector: 'app-header',
@@ -8,6 +9,9 @@ import { ProgressService } from '../../../services/progress.service';
   template: `
     <header class="header">
       <div class="header-left">
+        <button class="hamburger" (click)="profileService.toggleMobileMenu()">
+          ☰
+        </button>
         <h2>Interview Preparation Tracker</h2>
       </div>
       <div class="header-right">
@@ -37,10 +41,34 @@ import { ProgressService } from '../../../services/progress.service';
       top: 0;
       z-index: 50;
     }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .header-left h2 {
       font-size: 1.1rem;
       font-weight: 600;
       color: var(--color-text);
+    }
+    .hamburger {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      cursor: pointer;
+      font-size: 1.3rem;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text);
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+    .hamburger:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
     }
     .header-right {
       display: flex;
@@ -92,10 +120,32 @@ import { ProgressService } from '../../../services/progress.service';
     .theme-toggle:hover {
       border-color: var(--color-primary);
     }
+
+    @media (max-width: 768px) {
+      .header {
+        padding: 0 16px;
+      }
+      .hamburger {
+        display: flex;
+      }
+      .header-left h2 {
+        font-size: 0.95rem;
+      }
+      .progress-label {
+        display: none;
+      }
+      .progress-bar-mini {
+        width: 60px;
+      }
+      .header-right {
+        gap: 10px;
+      }
+    }
   `]
 })
 export class HeaderComponent {
   themeService = inject(ThemeService);
+  profileService = inject(ProfileService);
   private progressService = inject(ProgressService);
 
   getOverall() {

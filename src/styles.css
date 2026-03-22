@@ -218,4 +218,10 @@ pre code {
   .grid-2, .grid-3, .grid-4 {
     grid-template-columns: 1fr;
   }
+  h1 { font-size: 1.35rem; }
+  h2 { font-size: 1.15rem; }
+  .card, .card-flat { padding: 14px; }
+  .section-header { flex-wrap: wrap; gap: 8px; }
+  pre { padding: 12px; font-size: 12px; }
+  .btn { padding: 7px 12px; font-size: 0.8rem; }
 }

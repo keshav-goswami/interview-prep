@@ -9,7 +9,11 @@ import { ProfileService } from './services/profile.service';
   imports: [RouterOutlet, SidebarComponent, HeaderComponent],
   template: `
     <div class="app-layout">
-      <app-sidebar />
+      <!-- Mobile overlay backdrop -->
+      @if (profileService.mobileMenuOpen()) {
+        <div class="sidebar-backdrop" (click)="profileService.closeMobileMenu()"></div>
+      }
+      <app-sidebar [class.mobile-open]="profileService.mobileMenuOpen()" />
       <div class="main-area" [style.margin-left]="profileService.isCollapsed() ? '60px' : 'var(--sidebar-width)'">
         <app-header />
         <main class="content">
@@ -33,6 +37,25 @@ import { ProfileService } from './services/profile.service';
       flex: 1;
       padding: 28px 32px;
       max-width: 1200px;
+    }
+    .sidebar-backdrop {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .main-area {
+        margin-left: 0 !important;
+      }
+      .content {
+        padding: 16px;
+      }
+      .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+      }
     }
   `]
 })
