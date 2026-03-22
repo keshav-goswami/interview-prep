@@ -1,0 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #f5f6fa;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f0f1f5;
+  --color-text: #1a1a2e;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-primary: #6366f1;
+  --color-primary-light: #e0e7ff;
+  --color-primary-dark: #4f46e5;
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
+  --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --color-code-bg: #1e1e2e;
+  --color-code-text: #cdd6f4;
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --transition: 200ms ease;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0f0f1a;
+  --color-surface: #1a1a2e;
+  --color-surface-hover: #242445;
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-primary: #818cf8;
+  --color-primary-light: #1e1b4b;
+  --color-primary-dark: #a5b4fc;
+  --color-success-light: #064e3b;
+  --color-warning-light: #78350f;
+  --color-danger-light: #7f1d1d;
+  --color-info-light: #1e3a5f;
+  --color-border: #2d2d4a;
+  --color-border-light: #1f1f38;
+  --color-shadow: rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1 { font-size: 1.75rem; font-weight: 700; }
+h2 { font-size: 1.375rem; font-weight: 600; }
+h3 { font-size: 1.125rem; font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; }
+
+/* Code blocks */
+pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-border-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Syntax highlighting - basic */
+.kw { color: #cba6f7; }
+.fn { color: #89b4fa; }
+.str { color: #a6e3a1; }
+.num { color: #fab387; }
+.cmt { color: #6c7086; font-style: italic; }
+.type { color: #f9e2af; }
+
+/* Utility classes */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.card:hover {
+  box-shadow: var(--shadow);
+  border-color: var(--color-primary);
+}
+.card-flat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-easy { background: var(--color-success-light); color: var(--color-success); }
+.badge-medium { background: var(--color-warning-light); color: var(--color-warning); }
+.badge-hard { background: var(--color-danger-light); color: var(--color-danger); }
+.badge-hld { background: var(--color-info-light); color: var(--color-info); }
+.badge-lld { background: var(--color-primary-light); color: var(--color-primary); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+.btn-primary:hover { background: var(--color-primary-dark); }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.section-header h1 { margin: 0; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--color-border-light);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.link-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.ext-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all var(--transition);
+}
+.ext-link:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
