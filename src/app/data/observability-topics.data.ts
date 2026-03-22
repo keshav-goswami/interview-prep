@@ -1,0 +1,607 @@
+import { ObservabilityTopic } from '../models/observability.model';
+
+export const OBSERVABILITY_TOPICS: ObservabilityTopic[] = [
+  // ── Metrics ───────────────────────────────────────────────────────────
+  {
+    id: 'golden-signals',
+    title: 'Golden Signals (Latency, Traffic, Errors, Saturation)',
+    category: 'metrics',
+    order: 1,
+    explanation:
+      'The Four Golden Signals, introduced by Google\'s SRE book, are the most critical metrics for monitoring any distributed system. Latency measures the time it takes to serve a request, distinguishing between successful and failed request latency (a fast 500 error should not improve your latency stats). Traffic measures demand on the system, typically as requests per second for web services or transactions per second for databases. Errors measure the rate of failed requests, including explicit failures (HTTP 5xx), implicit failures (HTTP 200 with wrong content), and policy violations (responses slower than an SLA threshold).\n\nSaturation measures how "full" a service is, focusing on the most constrained resource: CPU utilization, memory usage, disk I/O, or network bandwidth. Saturation is the most predictive signal for imminent failure because most services degrade severely before they fail completely. Monitoring saturation lets you scale proactively rather than reactively.\n\nThese four signals provide a universal framework applicable to any service regardless of its technology stack. When on-call engineers are paged, they should immediately check: is latency high? is traffic abnormal? are errors elevated? is any resource saturated? This structured approach dramatically reduces mean time to diagnosis (MTTD) and mean time to recovery (MTTR).',
+    tools: [
+      {
+        name: 'Prometheus',
+        purpose: 'Open-source metrics collection and alerting toolkit with a powerful query language',
+        keyFeatures: [
+          'Pull-based model: scrapes /metrics endpoints at configurable intervals',
+          'PromQL query language for aggregation, filtering, and mathematical operations on time-series data',
+          'Built-in alerting via Alertmanager with grouping, silencing, and routing'
+        ]
+      },
+      {
+        name: 'Grafana',
+        purpose: 'Visualization platform for creating dashboards from multiple data sources',
+        keyFeatures: [
+          'Rich dashboard editor with 15+ panel types and template variables',
+          'Supports Prometheus, CloudWatch, Elasticsearch, and 50+ data sources',
+          'Alerting rules with notification channels (Slack, PagerDuty, email)'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Measure latency as percentiles (p50, p95, p99), not averages: averages hide tail latency issues',
+      'Track error rates as a percentage of total traffic, not absolute counts, to account for traffic changes',
+      'Set saturation alerts at 70-80% utilization to allow time for scaling before degradation',
+      'Separate successful and failed request latency: fast errors should not mask slow successes',
+      'Use histograms (not summaries) for latency when you need to aggregate across instances'
+    ],
+    interviewQuestions: [
+      'What are the Four Golden Signals and why are they considered the most important metrics?',
+      'Why should you measure latency as percentiles instead of averages? Give a concrete example.',
+      'How would you distinguish between a traffic spike and an error spike? What actions would you take for each?',
+      'A service shows 50% CPU saturation but requests are timing out. What could be happening?'
+    ],
+    resources: [
+      { label: 'Google SRE Book: Monitoring Distributed Systems', url: 'https://sre.google/sre-book/monitoring-distributed-systems/' },
+      { label: 'Prometheus Documentation', url: 'https://prometheus.io/docs/' }
+    ]
+  },
+  {
+    id: 'red-use-methods',
+    title: 'RED & USE Methods',
+    category: 'metrics',
+    order: 2,
+    explanation:
+      'The RED method (Rate, Errors, Duration) simplifies the Golden Signals for request-driven services like APIs and web servers. Rate is requests per second, Errors is the number of failed requests per second, and Duration is the distribution of response times (latency histogram). RED is particularly effective for microservices because every service can be monitored with the same three metrics, making it easy to build standardized dashboards.\n\nThe USE method (Utilization, Saturation, Errors) is designed for infrastructure resources like CPU, memory, disk, and network. Utilization is the average time the resource was busy (e.g., CPU at 85%). Saturation is the degree to which the resource has extra work it cannot service (e.g., CPU run queue length, memory swap usage). Errors are the count of error events (e.g., disk I/O errors, network packet drops). USE is ideal for identifying hardware and infrastructure bottlenecks.\n\nIn practice, teams use RED for application-level monitoring (every microservice gets a RED dashboard) and USE for infrastructure-level monitoring (every server/container gets a USE dashboard). Together, they form a complete picture: RED tells you what is wrong from the user perspective, USE tells you why from the infrastructure perspective.',
+    tools: [
+      {
+        name: 'Prometheus + Grafana',
+        purpose: 'Metrics collection and visualization for both RED and USE dashboards',
+        keyFeatures: [
+          'Pre-built dashboard templates for RED and USE methods on Grafana Labs marketplace',
+          'PromQL functions like rate(), histogram_quantile(), and irate() for computing RED metrics',
+          'Node Exporter for USE metrics: CPU, memory, disk, and network utilization per host'
+        ]
+      },
+      {
+        name: 'Datadog',
+        purpose: 'Unified observability platform with built-in RED and USE metric collection',
+        keyFeatures: [
+          'Auto-instrumented APM with RED metrics out of the box for supported languages',
+          'Infrastructure maps showing USE metrics across all hosts and containers',
+          'Anomaly detection and forecasting on RED/USE metrics with ML-powered alerts'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Apply RED to every microservice uniformly: rate, errors, and duration should appear on every service dashboard',
+      'Apply USE to every infrastructure resource: CPU, memory, disk, and network should each have utilization, saturation, and error panels',
+      'Correlate RED with USE: when RED shows high duration, check USE to identify the saturated resource',
+      'Set error budget alerts based on RED error rate: if errors consume the budget too fast, slow down deployments',
+      'Use consistent metric naming conventions across services for easy aggregation (e.g., http_requests_total, http_request_duration_seconds)'
+    ],
+    interviewQuestions: [
+      'Compare the RED and USE methods. When would you use each?',
+      'How would you implement RED metrics for a Go/Node.js microservice using Prometheus?',
+      'Your API latency (Duration in RED) spikes. Walk through how you would use USE metrics to diagnose the root cause.',
+      'What is the difference between utilization and saturation in the USE method?'
+    ],
+    resources: [
+      { label: 'The RED Method (Tom Wilkie)', url: 'https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services/' },
+      { label: 'The USE Method (Brendan Gregg)', url: 'https://www.brendangregg.com/usemethod.html' }
+    ]
+  },
+  {
+    id: 'prometheus-grafana',
+    title: 'Prometheus & Grafana',
+    category: 'metrics',
+    order: 3,
+    explanation:
+      'Prometheus is the de facto standard for metrics collection in cloud-native environments. It uses a pull-based model, scraping HTTP endpoints (/metrics) exposed by applications and exporters. Metrics are stored as time-series data identified by a metric name and key-value label pairs. The four metric types are counter (monotonically increasing, e.g., total requests), gauge (arbitrary value, e.g., current temperature), histogram (observations bucketed by value, e.g., request duration), and summary (similar to histogram but computes quantiles on the client side).\n\nPromQL (Prometheus Query Language) is a powerful functional language for querying time-series data. Key functions include rate() for per-second rates of counters, histogram_quantile() for computing percentiles from histograms, and aggregation operators like sum(), avg(), max() grouped by labels. Recording rules pre-compute expensive queries for dashboard performance, and alerting rules define conditions that trigger notifications via Alertmanager.\n\nGrafana is the visualization layer that transforms Prometheus metrics into interactive dashboards. It supports template variables for dynamic filtering (by environment, service, or instance), annotations for correlating events (deployments, incidents) with metrics, and alert rules that evaluate queries on a schedule. Together, Prometheus and Grafana form the CNCF-endorsed monitoring stack used by most Kubernetes environments.',
+    tools: [
+      {
+        name: 'Prometheus',
+        purpose: 'Time-series database and metrics collection engine',
+        keyFeatures: [
+          'Service discovery: auto-discovers targets in Kubernetes via pod annotations and service monitors',
+          'Recording rules pre-compute frequently-used queries for fast dashboard loading',
+          'Federation: hierarchical Prometheus setups for multi-cluster and global views'
+        ]
+      },
+      {
+        name: 'Grafana',
+        purpose: 'Metrics visualization, dashboarding, and alerting',
+        keyFeatures: [
+          'Dashboard-as-code with JSON/YAML provisioning for GitOps workflows',
+          'Explore mode for ad-hoc querying during incident investigation',
+          'Unified alerting across Prometheus, CloudWatch, and other data sources'
+        ]
+      },
+      {
+        name: 'Alertmanager',
+        purpose: 'Alert routing, grouping, silencing, and notification delivery',
+        keyFeatures: [
+          'Deduplication and grouping prevents alert storms from flooding on-call engineers',
+          'Routing tree sends alerts to different receivers based on labels (severity, team)',
+          'Silences and inhibition rules suppress known or downstream alerts'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Use histogram metric type for latency so you can compute arbitrary percentiles with histogram_quantile()',
+      'Label cardinality: keep label values bounded. High-cardinality labels (user IDs, request IDs) will explode storage and query performance',
+      'Use recording rules for dashboard queries to reduce load on Prometheus and improve dashboard responsiveness',
+      'Export Grafana dashboards as JSON and store in version control for reproducibility',
+      'Set up alerting on symptoms (high error rate) not causes (high CPU): symptoms are user-facing, causes are diagnostic'
+    ],
+    interviewQuestions: [
+      'Explain the four Prometheus metric types. When would you use a histogram vs a summary?',
+      'Write a PromQL query to calculate the 99th percentile latency for a specific service over the last 5 minutes.',
+      'What is label cardinality and why is it dangerous? Give an example of a high-cardinality label.',
+      'How does Alertmanager handle alert grouping and routing? Why is this important during incidents?'
+    ],
+    resources: [
+      { label: 'Prometheus Best Practices', url: 'https://prometheus.io/docs/practices/' },
+      { label: 'Grafana Tutorials', url: 'https://grafana.com/tutorials/' }
+    ]
+  },
+
+  // ── Logging ───────────────────────────────────────────────────────────
+  {
+    id: 'structured-logging',
+    title: 'Structured Logging',
+    category: 'logging',
+    order: 4,
+    explanation:
+      'Structured logging replaces free-text log messages with key-value pairs in a machine-parseable format (typically JSON). Instead of "User 12345 failed to login from IP 10.0.0.1", you emit {"event":"login_failed","user_id":12345,"source_ip":"10.0.0.1","timestamp":"2025-01-15T10:30:00Z"}. This enables precise filtering, aggregation, and alerting on specific fields without fragile regex parsing.\n\nLog levels (DEBUG, INFO, WARN, ERROR, FATAL) control verbosity. In production, log at INFO level with the ability to dynamically increase to DEBUG for specific services during incidents. Every log entry should include a correlation/request ID that traces the request across all services, enabling end-to-end debugging. Additional context like tenant ID, user ID, and operation name accelerates root cause analysis.\n\nLog aggregation centralizes logs from all services into a searchable store. The pipeline is: application emits structured logs to stdout -> log collector (Fluentd, Fluent Bit, Vector) ships logs -> log storage (Elasticsearch, CloudWatch Logs, Loki) indexes them -> visualization tool (Kibana, Grafana) enables search and dashboards. Separating log collection from application code means services do not need to know about the logging infrastructure.',
+    tools: [
+      {
+        name: 'Fluentd / Fluent Bit',
+        purpose: 'Log collection, parsing, and forwarding to multiple destinations',
+        keyFeatures: [
+          'Fluent Bit is lightweight (< 1 MB) for edge/container deployments; Fluentd is more feature-rich',
+          'Supports 50+ output plugins: Elasticsearch, CloudWatch, S3, Kafka, Loki',
+          'Parsing, filtering, and enrichment in the pipeline before forwarding'
+        ]
+      },
+      {
+        name: 'Grafana Loki',
+        purpose: 'Log aggregation system designed for cost-effective log storage with Grafana integration',
+        keyFeatures: [
+          'Label-based indexing (like Prometheus) instead of full-text indexing: much cheaper than Elasticsearch',
+          'LogQL query language: filter by labels, then grep/parse/aggregate log content',
+          'Native Grafana integration: correlate logs with metrics on the same dashboard'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Always use structured (JSON) logging: every field is queryable without regex',
+      'Include request ID, tenant ID, user ID, and operation name in every log entry for traceability',
+      'Log to stdout/stderr and let the infrastructure (Fluentd, Docker log driver) handle collection and routing',
+      'Set log retention policies: 30 days in hot storage (Elasticsearch), 90+ days in cold storage (S3/Glacier)',
+      'Never log sensitive data: PII, passwords, tokens, or credit card numbers. Use allow-lists, not block-lists'
+    ],
+    interviewQuestions: [
+      'Why is structured logging important? What are the disadvantages of unstructured log messages?',
+      'How would you implement request-level tracing across microservices using log correlation IDs?',
+      'Compare Elasticsearch vs Loki for log storage. When would you choose each?',
+      'How do you handle sensitive data in logs? What strategies prevent accidental PII leakage?'
+    ],
+    resources: [
+      { label: '12-Factor App: Logs', url: 'https://12factor.net/logs' },
+      { label: 'Grafana Loki Documentation', url: 'https://grafana.com/docs/loki/latest/' }
+    ]
+  },
+  {
+    id: 'elk-stack',
+    title: 'ELK Stack (Elasticsearch, Logstash, Kibana)',
+    category: 'logging',
+    order: 5,
+    explanation:
+      'The ELK stack is the most widely adopted open-source log management solution. Elasticsearch is a distributed search and analytics engine built on Apache Lucene. It indexes log data for fast full-text search, aggregation, and analysis. Logstash is a server-side data processing pipeline that ingests logs from multiple sources, transforms them (parse, enrich, filter), and sends them to Elasticsearch. Kibana is the visualization layer that provides search, dashboards, and analytics on Elasticsearch data.\n\nIn modern deployments, the stack has evolved. Beats (lightweight data shippers) replace Logstash for simple forwarding: Filebeat for logs, Metricbeat for metrics, Packetbeat for network data. The ingest pipeline is now: Beats -> Elasticsearch ingest nodes (or Logstash for complex transformations) -> Elasticsearch -> Kibana. Elasticsearch uses an inverted index for fast text search and doc values for aggregations and sorting.\n\nScaling Elasticsearch requires understanding shard management. Data is distributed across shards; each index has a configurable number of primary and replica shards. Too few shards limit parallelism; too many create overhead. Index lifecycle management (ILM) policies automate the hot-warm-cold-delete lifecycle: recent data on fast SSDs, older data on cheaper storage, and eventually deleted or archived to S3.',
+    tools: [
+      {
+        name: 'Elasticsearch',
+        purpose: 'Distributed search and analytics engine for log storage and querying',
+        keyFeatures: [
+          'Inverted index for full-text search, doc values for aggregations, up to petabytes of data',
+          'Index templates and mappings define field types (keyword, text, date, ip) for optimized storage',
+          'Cross-cluster search for querying across multiple Elasticsearch clusters'
+        ]
+      },
+      {
+        name: 'Kibana',
+        purpose: 'Visualization and exploration interface for Elasticsearch data',
+        keyFeatures: [
+          'Discover: interactive log exploration with filtering, field selection, and saved searches',
+          'Dashboards: build visualizations (histograms, pie charts, maps) from Elasticsearch aggregations',
+          'Lens: drag-and-drop visualization builder for non-technical users'
+        ]
+      },
+      {
+        name: 'Filebeat',
+        purpose: 'Lightweight log shipper that forwards logs to Elasticsearch or Logstash',
+        keyFeatures: [
+          'Modules for common log formats (Nginx, Apache, MySQL, system logs) with pre-built parsing',
+          'Back-pressure handling: slows down when Elasticsearch is overwhelmed',
+          'Runs as a DaemonSet in Kubernetes to collect logs from all pods on each node'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Use index lifecycle management (ILM) to automate hot/warm/cold/delete phases and control storage costs',
+      'Size shards between 10-50 GB for optimal performance; avoid too many small shards (oversharding)',
+      'Use keyword type for fields you filter/aggregate on (status codes, hostnames); text type for full-text search fields',
+      'Set up retention policies: keep detailed logs for 30 days, aggregate summaries for longer',
+      'Use ingest pipelines or Logstash for parsing and enrichment; keep application logs as raw JSON'
+    ],
+    interviewQuestions: [
+      'Explain the ELK stack architecture. What role does each component play?',
+      'How does Elasticsearch indexing work? What is an inverted index?',
+      'How would you handle an Elasticsearch cluster running out of disk space?',
+      'What is index lifecycle management (ILM) and why is it important for log management?'
+    ],
+    resources: [
+      { label: 'Elastic Documentation', url: 'https://www.elastic.co/guide/index.html' },
+      { label: 'Elasticsearch Definitive Guide', url: 'https://www.elastic.co/guide/en/elasticsearch/guide/current/index.html' }
+    ]
+  },
+  {
+    id: 'cloudwatch-logs',
+    title: 'CloudWatch Logs',
+    category: 'logging',
+    order: 6,
+    explanation:
+      'CloudWatch Logs is the AWS-native log management service. Logs are organized into log groups (one per application/service) and log streams (one per instance/container). AWS services like Lambda, ECS, API Gateway, and RDS automatically send logs to CloudWatch. For EC2 and on-premises servers, the CloudWatch Agent collects and forwards logs.\n\nCloudWatch Logs Insights provides an interactive query language for searching and analyzing logs. The syntax supports filter (grep-like), parse (regex/glob extraction), stats (aggregation with count, avg, sum, percentile), sort, and display commands. Queries run across all log streams in a log group and can scan terabytes of data in seconds. Saved queries and query history accelerate incident investigation.\n\nAdvanced features include metric filters (extract numeric values from logs to create CloudWatch metrics, e.g., count of ERROR log lines), subscription filters (stream logs in real-time to Lambda, Elasticsearch, or Kinesis), and cross-account log sharing. For cost optimization, set retention policies (default is forever) and export old logs to S3 for long-term archival. CloudWatch Logs is the simplest option for AWS-centric teams but can be expensive at high volume compared to self-managed solutions.',
+    tools: [
+      {
+        name: 'CloudWatch Logs Insights',
+        purpose: 'Interactive query language for searching and analyzing CloudWatch Logs',
+        keyFeatures: [
+          'Query syntax: filter, parse, stats, sort, display with auto-detected fields',
+          'Aggregation functions: count(), avg(), sum(), min(), max(), percentile(), earliest(), latest()',
+          'Query across multiple log groups simultaneously; visualize results as time-series charts'
+        ]
+      },
+      {
+        name: 'CloudWatch Agent',
+        purpose: 'Collects logs and custom metrics from EC2 instances and on-premises servers',
+        keyFeatures: [
+          'JSON configuration file defines which log files to collect and which metrics to publish',
+          'Supports both logs (to CloudWatch Logs) and metrics (to CloudWatch Metrics) in one agent',
+          'SSM Parameter Store integration for centralized agent configuration management'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Set retention policies on all log groups: never leave the default (never expire) in production',
+      'Use Logs Insights saved queries for common investigation patterns: error spikes, slow queries, failed logins',
+      'Create metric filters to turn log patterns into CloudWatch metrics and alarms (e.g., count of 5xx errors per minute)',
+      'Use subscription filters to stream critical logs to Lambda for real-time alerting or to S3 for long-term archival',
+      'Estimate costs before sending high-volume logs: CloudWatch Logs charges $0.50/GB ingestion + $0.03/GB/month storage'
+    ],
+    interviewQuestions: [
+      'How is CloudWatch Logs organized? What are log groups and log streams?',
+      'Write a CloudWatch Logs Insights query to find the top 10 slowest API endpoints in the last hour.',
+      'How would you create a CloudWatch alarm from a log pattern (e.g., "OutOfMemoryError")?',
+      'Compare CloudWatch Logs with the ELK stack. When would you use each?'
+    ],
+    resources: [
+      { label: 'CloudWatch Logs User Guide', url: 'https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/' },
+      { label: 'Logs Insights Query Syntax', url: 'https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html' }
+    ]
+  },
+
+  // ── Tracing ───────────────────────────────────────────────────────────
+  {
+    id: 'distributed-tracing',
+    title: 'Distributed Tracing & OpenTelemetry',
+    category: 'tracing',
+    order: 7,
+    explanation:
+      'Distributed tracing follows a single request as it propagates through multiple microservices. Each service creates a span representing its portion of the work, including start time, duration, status, and metadata. Spans are linked via a trace ID (propagated in HTTP headers like W3C traceparent) to form a complete trace tree. This enables engineers to see exactly where time is spent, which service failed, and how services interact.\n\nOpenTelemetry (OTel) is the CNCF standard for observability instrumentation. It provides vendor-neutral APIs, SDKs, and collectors for traces, metrics, and logs. OTel SDKs auto-instrument popular frameworks (Express, Spring, Django, Gin) to capture spans without code changes. The OTel Collector receives telemetry data, processes it (sampling, enrichment, batching), and exports it to any backend (Jaeger, Zipkin, Tempo, X-Ray, Datadog).\n\nSampling is critical for controlling tracing costs. Head-based sampling (decide at trace start) is simple but misses interesting traces. Tail-based sampling (decide after trace completes) captures all slow/error traces but requires buffering. Adaptive sampling adjusts the rate based on traffic volume. In practice, sample 100% of errors and slow traces, and a small percentage (1-10%) of successful traces.',
+    tools: [
+      {
+        name: 'OpenTelemetry',
+        purpose: 'Vendor-neutral observability framework for traces, metrics, and logs',
+        keyFeatures: [
+          'Auto-instrumentation for popular frameworks: zero-code-change span creation',
+          'OTel Collector: receive, process, and export telemetry to any backend',
+          'Context propagation: W3C TraceContext headers carry trace/span IDs across service boundaries'
+        ]
+      },
+      {
+        name: 'Jaeger',
+        purpose: 'Open-source distributed tracing backend and UI',
+        keyFeatures: [
+          'Trace visualization with service dependency graphs and critical path analysis',
+          'Adaptive sampling strategies: per-service, per-operation, rate-limiting',
+          'Storage backends: Elasticsearch, Cassandra, Kafka, and in-memory for development'
+        ]
+      },
+      {
+        name: 'Grafana Tempo',
+        purpose: 'Cost-effective trace storage backend that integrates natively with Grafana',
+        keyFeatures: [
+          'Uses object storage (S3, GCS) for cost-effective trace storage at scale',
+          'TraceQL query language for searching traces by span attributes',
+          'Exemplars: link Prometheus metrics to specific traces for drill-down debugging'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Instrument all service boundaries: HTTP calls, gRPC calls, database queries, cache operations, and message queue producers/consumers',
+      'Use baggage propagation to carry business context (tenant ID, user ID) across services without manual passing',
+      'Implement tail-based sampling to capture 100% of error and slow traces while sampling normal traces at 1-10%',
+      'Add custom span attributes (query, table name, item count) for debugging context; avoid high-cardinality attributes',
+      'Correlate traces with logs and metrics using trace IDs as the linking key'
+    ],
+    interviewQuestions: [
+      'What is distributed tracing and why is it necessary in microservice architectures?',
+      'Explain the concepts of trace, span, and context propagation. How does W3C TraceContext work?',
+      'What is OpenTelemetry and why has it become the standard for observability instrumentation?',
+      'Compare head-based and tail-based sampling. What are the trade-offs?'
+    ],
+    resources: [
+      { label: 'OpenTelemetry Documentation', url: 'https://opentelemetry.io/docs/' },
+      { label: 'Distributed Tracing in Practice (O\'Reilly)', url: 'https://www.oreilly.com/library/view/distributed-tracing-in/9781492056621/' }
+    ]
+  },
+  {
+    id: 'aws-xray',
+    title: 'AWS X-Ray',
+    category: 'tracing',
+    order: 8,
+    explanation:
+      'AWS X-Ray is the managed distributed tracing service for AWS. It integrates natively with Lambda, API Gateway, ECS, EKS, Elastic Beanstalk, and EC2. The X-Ray SDK instruments your application code to record trace data: incoming requests, outgoing HTTP calls, AWS SDK calls, and SQL queries. The X-Ray daemon (running as a sidecar or on the host) buffers and forwards trace segments to the X-Ray API.\n\nX-Ray provides a service map that visualizes your application\'s architecture, showing service dependencies, average latency, error rates, and throughput between services. This topology view is invaluable for understanding complex microservice interactions. Trace analytics lets you filter traces by response time, status code, annotation, or metadata to find problematic requests.\n\nX-Ray supports sampling rules to control cost: the default samples 1 request per second plus 5% of additional requests. Custom sampling rules can increase the rate for specific services or URLs. X-Ray Groups allow organizing traces by filter expressions (e.g., all traces with errors from the payment service). For teams already using OpenTelemetry, AWS Distro for OpenTelemetry (ADOT) sends OTel traces to X-Ray, providing vendor-neutral instrumentation with AWS-native visualization.',
+    tools: [
+      {
+        name: 'AWS X-Ray',
+        purpose: 'Managed distributed tracing service with service map visualization',
+        keyFeatures: [
+          'Service map: auto-generated topology showing all services, latencies, and error rates',
+          'Trace analytics: filter and group traces by response time, fault, annotation, or metadata',
+          'Insights: automated anomaly detection that identifies response time and error rate changes'
+        ]
+      },
+      {
+        name: 'AWS Distro for OpenTelemetry (ADOT)',
+        purpose: 'AWS-supported distribution of OpenTelemetry for sending traces to X-Ray',
+        keyFeatures: [
+          'Drop-in replacement for X-Ray SDK with vendor-neutral OTel instrumentation',
+          'ADOT Collector runs as a sidecar or DaemonSet, exports to X-Ray, CloudWatch, and third-party backends',
+          'Supports auto-instrumentation for Java, Python, Node.js, and .NET'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Instrument all AWS SDK calls: X-Ray SDK patches the AWS SDK to trace DynamoDB, S3, SQS, and other service calls automatically',
+      'Add annotations (indexed, searchable) for business-relevant data like customer tier or operation type',
+      'Add metadata (non-indexed) for debugging context like request/response bodies',
+      'Use X-Ray Groups to create focused views: group by service, environment, or error type',
+      'Consider ADOT over X-Ray SDK for new projects: vendor-neutral and supports exporting to multiple backends'
+    ],
+    interviewQuestions: [
+      'How does AWS X-Ray work? Describe the flow of trace data from application to visualization.',
+      'What is the difference between X-Ray annotations and metadata? When would you use each?',
+      'How does X-Ray sampling work? How would you customize it for a high-traffic service?',
+      'Compare X-Ray with Jaeger or Datadog APM. What are the advantages of each?'
+    ],
+    resources: [
+      { label: 'X-Ray Developer Guide', url: 'https://docs.aws.amazon.com/xray/latest/devguide/' },
+      { label: 'AWS Distro for OpenTelemetry', url: 'https://aws-otel.github.io/docs/introduction' }
+    ]
+  },
+
+  // ── Performance ───────────────────────────────────────────────────────
+  {
+    id: 'frontend-performance',
+    title: 'Frontend Performance (Core Web Vitals)',
+    category: 'performance',
+    order: 9,
+    explanation:
+      'Core Web Vitals (CWV) are Google\'s standardized metrics for measuring user experience on the web. Largest Contentful Paint (LCP) measures loading performance: the time until the largest visible element (image, heading, text block) renders. Target: under 2.5 seconds. Interaction to Next Paint (INP) measures responsiveness: the latency of the slowest interaction (click, tap, keyboard) during the page visit. Target: under 200 milliseconds. Cumulative Layout Shift (CLS) measures visual stability: the sum of unexpected layout shifts during the page lifecycle. Target: under 0.1.\n\nOptimizing LCP involves: reducing server response time (TTFB), preloading critical resources, optimizing images (WebP/AVIF, lazy loading, responsive srcset), inlining critical CSS, and avoiding render-blocking JavaScript. INP optimization requires: breaking up long tasks (> 50ms) into smaller chunks using requestIdleCallback or scheduler.yield(), minimizing main thread work, using web workers for heavy computation, and reducing JavaScript bundle size with code splitting.\n\nCLS optimization involves: reserving space for images/ads with explicit width/height or aspect-ratio CSS, avoiding dynamically injected content above the fold, using CSS contain for layout isolation, and loading fonts with font-display: swap plus preloading. Monitoring CWV in production uses the Web Vitals library (real user monitoring) and Lighthouse (synthetic testing in CI/CD).',
+    tools: [
+      {
+        name: 'Lighthouse',
+        purpose: 'Automated auditing tool for performance, accessibility, SEO, and best practices',
+        keyFeatures: [
+          'Performance score based on LCP, INP, CLS, TTFB, and Total Blocking Time',
+          'Actionable recommendations with estimated savings for each optimization',
+          'CI integration: run Lighthouse in GitHub Actions or other pipelines with budget assertions'
+        ]
+      },
+      {
+        name: 'Chrome DevTools Performance Panel',
+        purpose: 'Runtime profiling for JavaScript execution, rendering, and layout analysis',
+        keyFeatures: [
+          'Flame chart visualization of main thread activity: script, rendering, painting, GC',
+          'Layout shift regions highlighted in the timeline with causative elements identified',
+          'Network waterfall showing resource loading order, timing, and blocking relationships'
+        ]
+      },
+      {
+        name: 'Web Vitals Library',
+        purpose: 'JavaScript library for measuring Core Web Vitals in production (Real User Monitoring)',
+        keyFeatures: [
+          'Captures LCP, INP, CLS, FCP, and TTFB from real users',
+          'Attributes each metric to the causative element/interaction for debugging',
+          'Sends data to any analytics endpoint for dashboarding and alerting'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Measure CWV with Real User Monitoring (web-vitals library) in production, not just synthetic Lighthouse in CI',
+      'Optimize LCP: preload hero images, inline critical CSS, reduce TTFB with caching and CDN',
+      'Optimize INP: break long tasks (> 50ms) into smaller chunks, defer non-essential JavaScript, use code splitting',
+      'Optimize CLS: always set width/height on images and embeds, avoid injecting content above the fold',
+      'Set performance budgets in CI: fail the build if bundle size or Lighthouse score regresses'
+    ],
+    interviewQuestions: [
+      'What are the three Core Web Vitals and what does each measure?',
+      'How would you diagnose and fix a poor LCP score? Walk through your debugging process.',
+      'What causes Cumulative Layout Shift and how do you prevent it?',
+      'Explain the difference between lab testing (Lighthouse) and field data (CrUX/RUM). Why do you need both?'
+    ],
+    resources: [
+      { label: 'web.dev Core Web Vitals', url: 'https://web.dev/vitals/' },
+      { label: 'Chrome DevTools Performance', url: 'https://developer.chrome.com/docs/devtools/performance/' }
+    ]
+  },
+  {
+    id: 'backend-profiling',
+    title: 'Backend Profiling & Load Testing',
+    category: 'performance',
+    order: 10,
+    explanation:
+      'Backend profiling identifies performance bottlenecks in application code. CPU profiling shows which functions consume the most CPU time using sampling (periodic stack snapshots) or instrumentation (function enter/exit hooks). Memory profiling tracks allocations, heap usage, and garbage collection behavior to find memory leaks and excessive allocation. Go\'s pprof, Java\'s JFR/async-profiler, and Node.js\'s --inspect with Chrome DevTools are standard tools.\n\nLoad testing simulates production traffic to verify that your system meets performance requirements. Key metrics include throughput (requests per second), latency percentiles (p50, p95, p99), error rate, and resource utilization under load. Testing strategies include: load test (expected traffic), stress test (beyond capacity to find the breaking point), soak test (sustained load for hours to find memory leaks), and spike test (sudden traffic burst). Results should be compared against SLOs.\n\nContinuous profiling in production (via tools like Pyroscope, Parca, or AWS CodeGuru Profiler) captures CPU and memory profiles from live services with minimal overhead (< 2%). This reveals performance regressions that only appear under real traffic patterns and helps optimize the most impactful code paths. Flame graphs are the standard visualization, showing the call stack with width proportional to time spent in each function.',
+    tools: [
+      {
+        name: 'k6 (Grafana)',
+        purpose: 'Developer-centric load testing tool with JavaScript test scripts',
+        keyFeatures: [
+          'Write tests in JavaScript: define scenarios with ramp-up, steady state, and ramp-down stages',
+          'Thresholds: set pass/fail criteria on p95 latency, error rate, or throughput',
+          'Cloud execution for distributed load generation; integrates with Grafana for results visualization'
+        ]
+      },
+      {
+        name: 'Go pprof',
+        purpose: 'Built-in Go profiling tool for CPU, memory, goroutine, and block profiling',
+        keyFeatures: [
+          'HTTP endpoint (/debug/pprof/) for collecting profiles from running services',
+          'Flame graph and top-function views for identifying CPU and memory hotspots',
+          'Comparison mode: diff two profiles to see the impact of code changes'
+        ]
+      },
+      {
+        name: 'Pyroscope',
+        purpose: 'Continuous profiling platform for production environments',
+        keyFeatures: [
+          'Always-on profiling with < 2% CPU overhead, suitable for production',
+          'Supports Go, Python, Java, Ruby, Node.js, and .NET',
+          'Tag-based filtering: slice profiles by environment, service, pod, or custom labels'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Run load tests in an environment that mirrors production: same instance types, database size, and network configuration',
+      'Profile in production with continuous profiling (Pyroscope, Parca) to catch regressions that only appear under real traffic',
+      'Use flame graphs to quickly identify the hottest code paths; focus optimization on the widest bars',
+      'Set SLO-based load test thresholds: p99 latency < 200ms, error rate < 0.1% at 2x expected traffic',
+      'Include database and cache in load tests: application code is often fast, but queries under load create contention'
+    ],
+    interviewQuestions: [
+      'What is the difference between CPU profiling and memory profiling? When would you use each?',
+      'How would you design a load test for a microservice that handles 10,000 requests per second?',
+      'What is a flame graph and how do you read one?',
+      'Explain the difference between load testing, stress testing, and soak testing.'
+    ],
+    resources: [
+      { label: 'k6 Documentation', url: 'https://grafana.com/docs/k6/latest/' },
+      { label: 'Go pprof Guide', url: 'https://go.dev/blog/pprof' }
+    ]
+  },
+  {
+    id: 'database-performance',
+    title: 'Database Performance',
+    category: 'performance',
+    order: 11,
+    explanation:
+      'Database performance is often the primary bottleneck in application performance. Query optimization starts with EXPLAIN/EXPLAIN ANALYZE: understanding query plans reveals full table scans, missing indexes, inefficient joins, and sort operations. Indexes are the most impactful optimization: B-tree indexes for equality and range queries, composite indexes for multi-column filters (leftmost prefix rule), covering indexes that include all queried columns, and partial indexes for filtered subsets.\n\nConnection management is equally critical. Each database connection consumes memory (5-10 MB for PostgreSQL). Without connection pooling, a microservices architecture with 20 services and 10 instances each could open 200+ connections per service, exhausting the database. Connection poolers (PgBouncer, RDS Proxy, application-level pools) maintain a pool of reusable connections. Configure pool sizes based on: pool_size = ((core_count * 2) + effective_spindle_count) for PostgreSQL.\n\nAt scale, single-database architectures reach limits. Vertical scaling (bigger instances) has a ceiling. Horizontal strategies include: read replicas for read-heavy workloads, sharding (partition data across databases by key), and caching (Redis/Memcached for frequently accessed data). Monitoring slow query logs, lock contention, replication lag, and connection pool utilization provides early warning before users are impacted.',
+    tools: [
+      {
+        name: 'EXPLAIN ANALYZE',
+        purpose: 'Query plan analysis showing actual execution statistics',
+        keyFeatures: [
+          'Shows actual row counts, loop iterations, and execution time per operation',
+          'Identifies sequential scans, index scans, and join strategies (nested loop, hash, merge)',
+          'Helps verify that indexes are actually being used by the query planner'
+        ]
+      },
+      {
+        name: 'RDS Performance Insights',
+        purpose: 'AWS database performance monitoring with wait-event analysis',
+        keyFeatures: [
+          'Database load visualization: see active sessions broken down by wait event (CPU, I/O, lock)',
+          'Top SQL: identify the queries consuming the most database resources',
+          'Counter metrics: track buffer cache hit ratio, transactions per second, and replication lag'
+        ]
+      },
+      {
+        name: 'pgBouncer',
+        purpose: 'Lightweight connection pooler for PostgreSQL',
+        keyFeatures: [
+          'Three pooling modes: session (safest), transaction (most efficient), statement (most aggressive)',
+          'Reduces PostgreSQL memory usage by limiting actual connections while supporting many application connections',
+          'Transparent to application: drop-in proxy between application and database'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Run EXPLAIN ANALYZE on every new query before production: verify index usage and expected row counts',
+      'Design composite indexes with the most selective column first; follow the leftmost prefix rule',
+      'Use connection pooling always: direct connections waste memory and limit concurrency',
+      'Monitor slow query logs with a threshold (100ms for OLTP) and address the top offenders weekly',
+      'Avoid N+1 queries: batch load related data with IN clauses or JOINs instead of per-row queries'
+    ],
+    interviewQuestions: [
+      'How would you debug a slow SQL query? Walk through your optimization process.',
+      'Explain the difference between a clustered and non-clustered index. What is a covering index?',
+      'What is the N+1 query problem? How do you detect and fix it?',
+      'How does connection pooling work? Why is it critical for microservice architectures?'
+    ],
+    resources: [
+      { label: 'Use The Index, Luke', url: 'https://use-the-index-luke.com/' },
+      { label: 'PostgreSQL EXPLAIN Documentation', url: 'https://www.postgresql.org/docs/current/using-explain.html' }
+    ]
+  },
+
+  // ── Practices ─────────────────────────────────────────────────────────
+  {
+    id: 'sli-slo-sla',
+    title: 'SLI/SLO/SLA & Error Budgets',
+    category: 'practices',
+    order: 12,
+    explanation:
+      'Service Level Indicators (SLIs) are quantitative measures of a service\'s behavior: availability (percentage of successful requests), latency (percentage of requests faster than a threshold), throughput, and correctness. SLIs must be measurable, meaningful to users, and comparable over time. Good SLIs are ratios: good events / total events, expressed as a percentage.\n\nService Level Objectives (SLOs) are target values for SLIs: "99.9% of requests will complete in under 200ms" or "99.95% availability measured monthly." SLOs represent the reliability contract between the service team and its users. They must be achievable, meaningful, and have consequences. Service Level Agreements (SLAs) are formal contracts with financial penalties: "99.99% uptime or we credit 10% of your bill." SLAs are stricter than SLOs and involve legal/business commitments.\n\nError budgets are the key innovation from Google SRE. If your SLO is 99.9% availability, your error budget is 0.1% (about 43 minutes of downtime per month). When the error budget is healthy, teams can deploy frequently and take risks. When the budget is consumed, teams must freeze deployments and focus on reliability. This transforms the traditional tension between development velocity and reliability into a data-driven decision: "We have 20 minutes of error budget remaining this month, so let\'s delay the risky deployment." Error budget burn rate alerts notify teams when they are consuming their budget faster than expected.',
+    tools: [
+      {
+        name: 'Prometheus + SLO tooling',
+        purpose: 'Compute SLI/SLO metrics and error budgets from Prometheus data',
+        keyFeatures: [
+          'Sloth and Pyrra generate Prometheus recording rules and alerts from SLO definitions',
+          'Multi-window, multi-burn-rate alerts catch both fast burns (outages) and slow burns (degradation)',
+          'SLO dashboards show remaining error budget, burn rate, and historical compliance'
+        ]
+      },
+      {
+        name: 'Datadog SLO Tracking',
+        purpose: 'Built-in SLO monitoring with error budget tracking and alerting',
+        keyFeatures: [
+          'Define SLOs from any Datadog metric, monitor, or APM trace analytics',
+          'Error budget visualization: remaining budget, burn rate, and projected exhaustion date',
+          'SLO status page and API for integrating SLO data into deployment pipelines'
+        ]
+      }
+    ],
+    bestPractices: [
+      'Define SLIs based on user-facing behavior, not internal metrics: "request success rate" not "CPU utilization"',
+      'Set SLOs slightly stricter than SLAs to provide a safety buffer for the business',
+      'Use multi-window, multi-burn-rate alerts: fast burn (2% budget in 1 hour = page), slow burn (10% budget in 3 days = ticket)',
+      'Review SLOs quarterly: tighten if consistently exceeded (wasting engineering effort), loosen if consistently missed (unrealistic)',
+      'Use error budgets to make deployment decisions: freeze risky changes when budget is low, accelerate when budget is healthy'
+    ],
+    interviewQuestions: [
+      'What is the difference between SLI, SLO, and SLA? Give an example of each for a web API.',
+      'What is an error budget and how does it balance reliability with development velocity?',
+      'How would you set up multi-window burn-rate alerts for a 99.9% availability SLO?',
+      'Your service consumed its entire monthly error budget in the first week. What actions do you take?'
+    ],
+    resources: [
+      { label: 'Google SRE Book: SLOs', url: 'https://sre.google/sre-book/service-level-objectives/' },
+      { label: 'The Art of SLOs (Google)', url: 'https://sre.google/resources/practices-and-processes/art-of-slos/' }
+    ]
+  }
+];
